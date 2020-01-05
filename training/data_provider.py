@@ -1,7 +1,22 @@
-def get_batch_gen(imgs_path, gt_masks_path):
-    while True:
-        imgs_batch = []  # array dims - channels, height, width - values 0 - 255 float
-        gt_masks_batch = []  # array dims - channels, height, width - values 0 - 1 float
+import os
+
+from keras.utils import Sequence
+
+
+class TrainBatchGenerator(Sequence):
+
+    def __init__(self, data_path, steps, batch_size=1):
+        super(TrainBatchGenerator, self).__init__()
+
+        self.batch_size = batch_size
+        self.steps = steps
+
+    def __len__(self):
+        return self.steps
+
+    def __getitem__(self, index):
+        imgs_batch = []  # array dims - batch_size, height, width, channels
+        gt_masks_batch = []
 
         #
         #
@@ -11,5 +26,42 @@ def get_batch_gen(imgs_path, gt_masks_path):
 
         raise NotImplemented()
 
-        yield imgs_batch, gt_masks_batch
-        pass
+        return imgs_batch, gt_masks_batch
+
+    def on_epoch_end(self):
+        super().on_epoch_end()
+
+    def __iter__(self):
+        raise NotImplemented()
+
+
+class ValBatchGenerator(Sequence):
+
+    def __init__(self, data_path, batch_size=1):
+        super(ValBatchGenerator, self).__init__()
+
+        self.img_names = os.listdir('{}/{}'.format(data_path, 'imgs'))
+        self.batch_size = batch_size
+
+    def __len__(self):
+        return len(self.img_names)
+
+    def __getitem__(self, index):
+        imgs_batch = []  # array dims - batch_size, height, width, channels
+        gt_masks_batch = []
+
+        #
+        #
+        # TODO generate val data batch
+        #
+        #
+
+        raise NotImplemented()
+
+        return imgs_batch, gt_masks_batch
+
+    def on_epoch_end(self):
+        super().on_epoch_end()
+
+    def __iter__(self):
+        raise NotImplemented()

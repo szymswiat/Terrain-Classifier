@@ -7,7 +7,7 @@ from keras.utils.vis_utils import plot_model as plot
 
 # ========= Load settings from Config file
 from model.model import get_unet
-from training.data_provider import get_batch_gen
+from training.data_provider import TrainBatchGenerator, ValBatchGenerator
 
 
 class Config:
@@ -27,14 +27,11 @@ class Config:
         self.height = int(parser.get('model', 'img_height'))
         self.width = int(parser.get('model', 'img_width'))
 
-        self.imgs_path_train = parser.get('data paths', 'imgs_train')
-        self.gt_masks_path_train = parser.get('data paths', 'gt_masks_train')
+        self.train_data = parser.get('data paths', 'train_data')
 
-        self.imgs_path_val = parser.get('data paths', 'imgs_val')
-        self.gt_masks_path_val = parser.get('data paths', 'gt_masks_val')
+        self.val_data = parser.get('data paths', 'val_data')
 
         self.train_steps = int(parser.get('training', 'train_steps'))
-        self.val_steps = int(parser.get('training', 'val_steps'))
 
 
 def create_callbacks(weights_dir):
@@ -52,13 +49,14 @@ def create_callbacks(weights_dir):
 def main():
     c = Config('configuration.ini')
 
-    train_gen = get_batch_gen(
-        imgs_path=c.imgs_path_train,
-        gt_masks_path=c.gt_masks_path_train
+    train_gen = TrainBatchGenerator(
+        data_path=c.train_data,
+        steps=c.train_steps,
+        batch_size=c.batch_size
     )
-    val_gen = get_batch_gen(
-        imgs_path=c.imgs_path_val,
-        gt_masks_path=c.gt_masks_path_val
+    val_gen = ValBatchGenerator(
+        data_path=c.val_data,
+        batch_size=c.batch_size
     )
 
     # =========== Construct and or load the model architecture
@@ -88,9 +86,9 @@ def main():
 
     model.fit_generator(
         generator=train_gen,
-        steps_per_epoch=c.train_steps,
+        steps_per_epoch=len(train_gen),
         validation_data=val_gen,
-        validation_steps=c.val_steps,
+        validation_steps=len(val_gen),
         epochs=c.n_epochs,
         callbacks=callbacks,
         verbose=2)
