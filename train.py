@@ -2,7 +2,6 @@ import configparser
 import os
 
 from keras.callbacks import ModelCheckpoint
-from keras.models import load_model
 from keras.utils.vis_utils import plot_model as plot
 
 # ========= Load settings from Config file
@@ -38,7 +37,7 @@ def create_callbacks(weights_dir):
     callbacks = []
 
     # checkpoint
-    filepath = '{}/{}'.format(weights_dir, "model-{epoch:02d}-{val_accuracy:.2f}.hdf5")
+    filepath = '{}/{}'.format(weights_dir, "model-{epoch:02d}.hdf5")
     checkpoint = ModelCheckpoint(filepath, monitor='val_accuracy', verbose=1, save_best_only=True, mode='max')
 
     callbacks.append(checkpoint)
@@ -59,9 +58,6 @@ def main():
         batch_size=c.batch_size
     )
 
-    # =========== Construct and or load the model architecture
-    model = None
-
     model_output_dir_path = '{}/{}'.format(c.model_output_dir, c.model_name)
     if os.path.isdir(model_output_dir_path) is False:
         os.mkdir(model_output_dir_path)
@@ -78,7 +74,10 @@ def main():
 
         model.compile(optimizer='sgd', loss='categorical_crossentropy', metrics=['accuracy'])
     elif c.mode == 'resume':
-        model = load_model('{}/{}_whole_model.h5'.format(model_output_dir_path, c.model_name))
+
+        # TODO select best model
+        raise NotImplemented()
+        # model = load_model('{}/{}_whole_model.h5'.format(model_output_dir_path, c.model_name))
     else:
         raise Exception("Invalid mode.")
 
@@ -92,8 +91,6 @@ def main():
         epochs=c.n_epochs,
         callbacks=callbacks,
         verbose=2)
-
-    print("\n\n======================= Training finished =======================")
 
 
 if __name__ == "__main__":
