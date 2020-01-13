@@ -97,7 +97,7 @@ class TrainBatchGenerator(Sequence):
         height, width = self.size_data['height'], self.size_data['width']
         channels, classes = self.size_data['channels'], self.size_data['classes']
         with h5py.File(h5filepath, 'w') as f:
-            images = f.create_dataset('images', (validation_images_size, height, width, channels), dtype="uint8")
+            images = f.create_dataset('images', (validation_images_size, height, width, channels), dtype="float32")
             masks = f.create_dataset('masks', (validation_images_size, height * width, classes), dtype="uint8")
             for i in range(validation_images_size):
                 image, forest_mask = self[0]
