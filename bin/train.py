@@ -7,7 +7,7 @@ from model.model import get_unet
 from training.data_provider import TrainBatchGenerator, ValBatchGenerator
 
 
-class Config:
+class IniConfig:
     def __init__(self, filepath):
         parser = configparser.RawConfigParser()
         parser.read(filepath)
@@ -37,7 +37,7 @@ class Config:
         self.validation_images_size = int(parser.get('training', 'validation_images_size'))
 
 
-def create_callbacks(model_output_path, val_gen, size_data, c: Config):
+def create_callbacks(model_output_path, val_gen, size_data, c: IniConfig):
     callbacks = []
 
     eval = EvalCallback(val_gen, size_data, model_output_path, c.log_filepath)
@@ -48,7 +48,7 @@ def create_callbacks(model_output_path, val_gen, size_data, c: Config):
 
 
 def main():
-    c = Config('configuration.ini')
+    c = IniConfig('configuration.ini')
 
     size_data = {
         'height': c.height,

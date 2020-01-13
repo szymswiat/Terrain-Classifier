@@ -2,12 +2,12 @@ import argparse
 import sys
 
 import numpy as np
+from imageio.plugins.pillow import ndarray_to_pil
 from tensorflow.keras.models import load_model, Model
 
+from bin.train import IniConfig
 from eval.eval_helpers import map_to_classes
 from training.data_provider import ValBatchGenerator
-
-from imageio.plugins.pillow import ndarray_to_pil
 
 
 def parse_args(args):
@@ -28,6 +28,8 @@ def main(args=None):
         args = sys.argv[1:]
     args = parse_args(args)
 
+    c = IniConfig('configuration.ini')
+
     data_gen = ValBatchGenerator(
         data_path='./data/val',
         train_gen=None,
@@ -44,15 +46,19 @@ def main(args=None):
 
         predictions = predictions.numpy()
 
-        classes_output = map_to_classes(predictions)
+        gt_classes_map = map_to_classes(masks_batch)
+        gt_mask_to_display = np.zeros(shape=gt_classes_map.shape, dtype=np.uint8)
+        gt_mask_to_display[gt_classes_map == 1] = 255
+        gt_mask_to_display = gt_mask_to_display.reshape((b, h, w))
 
-        mask_to_display = np.zeros(shape=classes_output.shape, dtype=np.uint8)
+        pred_classes_map = map_to_classes(predictions)
+        pred_mask_to_display = np.zeros(shape=pred_classes_map.shape, dtype=np.uint8)
+        pred_mask_to_display[pred_classes_map == 1] = 255
+        pred_mask_to_display = pred_mask_to_display.reshape((b, h, w))
 
-        mask_to_display[classes_output == 1] = 255
-        mask_to_display = mask_to_display.reshape((b, h, w))
-
-        ndarray_to_pil(images_batch[0]).show()
-        ndarray_to_pil(mask_to_display[0]).show()
+        ndarray_to_pil(images_batch[0]).show(title='image')
+        ndarray_to_pil(pred_mask_to_display[0]).show(title='prediction')
+        ndarray_to_pil(gt_mask_to_display[0]).show(title='gt')
 
 
 if __name__ == "__main__":
