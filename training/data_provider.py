@@ -53,7 +53,6 @@ class TrainBatchGenerator(Sequence):
         self.steps = steps
         self.size_data = size_data
         self.img_max_rotation_angle = rot_angle
-
         self.pre_rot_size = (int(size_data['height'] * sqrt(2)), int(size_data['width'] * sqrt(2)))
 
     def __len__(self):
@@ -109,15 +108,15 @@ class TrainBatchGenerator(Sequence):
 
 class ValBatchGenerator(Sequence):
     validation_file_name = 'validation_data.h5'
-    validation_images_size = 1000
     dataset_len = 0
 
-    def __init__(self, data_path, train_gen, batch_size=1):
+    def __init__(self, data_path, train_gen, validation_images_size, batch_size=1):
         super(ValBatchGenerator, self).__init__()
         self.data_path = data_path
         h5filepath = '{}/{}'.format(data_path, self.validation_file_name)
         if not os.path.isfile(h5filepath):
-            train_gen.generate_validation_data(h5filepath, self.validation_images_size)
+            print('\nValidation data does not exits. Generating ...\n')
+            train_gen.generate_validation_data(h5filepath, validation_images_size)
 
         self.data_file = h5py.File(h5filepath, 'r')
 
@@ -136,7 +135,10 @@ class ValBatchGenerator(Sequence):
         start_slice = index * self.batch_size
         end_slice = index * self.batch_size + self.batch_size
 
-        return images[start_slice:end_slice], masks[start_slice:end_slice]
+        images = images[start_slice:end_slice].astype(dtype=np.float32)
+        masks = masks[start_slice:end_slice].astype(dtype=np.float32)
+
+        return images, masks
 
     def on_epoch_end(self):
         super().on_epoch_end()

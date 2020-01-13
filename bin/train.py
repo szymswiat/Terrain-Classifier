@@ -1,9 +1,8 @@
 import configparser
 import os
 
-from keras.callbacks import ModelCheckpoint
-
 # ========= Load settings from Config file
+from callbacks.EvalCallback import EvalCallback
 from model.model import get_unet
 from training.data_provider import TrainBatchGenerator, ValBatchGenerator
 
@@ -33,15 +32,17 @@ class Config:
 
         self.rotation_angle_range = int(parser.get('training', 'rotation_angle_range'))
 
+        self.log_filepath = parser.get('training', 'log_file')
 
-def create_callbacks(weights_dir):
+        self.validation_images_size = int(parser.get('training', 'validation_images_size'))
+
+
+def create_callbacks(model_output_path, val_gen, size_data, c: Config):
     callbacks = []
 
-    # checkpoint
-    filepath = '{}/{}'.format(weights_dir, "model-{epoch:02d}.hdf5")
-    checkpoint = ModelCheckpoint(filepath, monitor='val_accuracy', verbose=1, save_best_only=True, mode='max')
+    eval = EvalCallback(val_gen, size_data, model_output_path, c.log_filepath)
 
-    callbacks.append(checkpoint)
+    callbacks.append(eval)
 
     return callbacks
 
@@ -67,7 +68,8 @@ def main():
     val_gen = ValBatchGenerator(
         data_path=c.val_data,
         train_gen=train_gen,
-        batch_size=c.batch_size
+        batch_size=c.batch_size,
+        validation_images_size=c.validation_images_size
     )
 
     model_output_dir_path = '{}/{}'.format(c.model_output_dir, c.model_name)
@@ -88,7 +90,7 @@ def main():
     else:
         raise Exception("Invalid mode.")
 
-    callbacks = create_callbacks(model_output_dir_path)
+    callbacks = create_callbacks(model_output_dir_path, val_gen, size_data, c)
 
     model.fit_generator(
         generator=train_gen,

@@ -5,6 +5,7 @@ import numpy as np
 from keras.callbacks import ModelCheckpoint
 from keras.models import load_model, Model
 
+from eval.eval_helpers import map_to_classes
 from training.data_provider import ValBatchGenerator
 
 
@@ -19,15 +20,6 @@ def parse_args(args):
     parser.add_argument('-m', '--model', help='Path to model.')
 
     return parser.parse_args(args)
-
-
-def map_to_classes(predictions: np.ndarray):
-    """
-    Returns integer matrix with class numbers.
-    """
-    class_matrix = np.argmax(predictions, axis=4)
-
-    return class_matrix
 
 
 def main(args=None):
