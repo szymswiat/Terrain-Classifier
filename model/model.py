@@ -1,5 +1,5 @@
-from keras.layers import Input, concatenate, Conv2D, MaxPooling2D, UpSampling2D, core, Dropout
-from keras.models import Model
+from tensorflow.keras.layers import Input, concatenate, Conv2D, MaxPooling2D, UpSampling2D, Dropout, Activation, Reshape
+from tensorflow.keras.models import Model
 
 
 def get_unet(n_classes, n_ch, img_height, img_width) -> Model:
@@ -31,10 +31,10 @@ def get_unet(n_classes, n_ch, img_height, img_width) -> Model:
     conv5 = Conv2D(32, (3, 3), activation='relu', padding='same')(conv5)
     #
     conv6 = Conv2D(n_classes, (1, 1), activation='relu', padding='same')(conv5)
-    conv6 = core.Reshape((img_height, img_width, n_classes))(conv6)
+    conv6 = Reshape((img_height * img_width, n_classes))(conv6)
     # conv6 = core.Permute((2, 1))(conv6)
     ############
-    conv7 = core.Activation('softmax')(conv6)
+    conv7 = Activation('softmax')(conv6)
 
     model = Model(inputs=inputs, outputs=conv7)
 

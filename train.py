@@ -2,7 +2,6 @@ import configparser
 import os
 
 from keras.callbacks import ModelCheckpoint
-from keras.utils.vis_utils import plot_model as plot
 
 # ========= Load settings from Config file
 from model.model import get_unet
@@ -32,6 +31,8 @@ class Config:
 
         self.train_steps = int(parser.get('training', 'train_steps'))
 
+        self.rotation_angle_range = int(parser.get('training', 'rotation_angle_range'))
+
 
 def create_callbacks(weights_dir):
     callbacks = []
@@ -48,13 +49,24 @@ def create_callbacks(weights_dir):
 def main():
     c = Config('configuration.ini')
 
+    size_data = {
+        'height': c.height,
+        'width': c.width,
+        'channels': c.n_ch,
+        'classes': c.n_classes
+    }
+
     train_gen = TrainBatchGenerator(
         data_path=c.train_data,
         steps=c.train_steps,
-        batch_size=c.batch_size
+        batch_size=c.batch_size,
+        size_data=size_data,
+        rot_angle=c.rotation_angle_range
     )
+
     val_gen = ValBatchGenerator(
         data_path=c.val_data,
+        train_gen=train_gen,
         batch_size=c.batch_size
     )
 
@@ -65,14 +77,9 @@ def main():
     if c.mode == 'new':
 
         model = get_unet(c.n_classes, c.n_ch, c.height, c.width)  # the U-net model
-        print("Check: final output of the network:")
         print(model.summary())
-        plot(model,
-             to_file='{}/{}_model.png'.format(model_output_dir_path, c.model_name))  # check how the model looks like
-        json_string = model.to_json()
-        open('{}/{}_architecture.json'.format(model_output_dir_path, c.model_name), 'w').write(json_string)
 
-        model.compile(optimizer='sgd', loss='categorical_crossentropy', metrics=['accuracy'])
+        model.compile(optimizer='sgd', loss='categorical_crossentropy')
     elif c.mode == 'resume':
 
         # TODO select best model
@@ -90,7 +97,7 @@ def main():
         validation_steps=len(val_gen),
         epochs=c.n_epochs,
         callbacks=callbacks,
-        verbose=2)
+        verbose=1)
 
 
 if __name__ == "__main__":
