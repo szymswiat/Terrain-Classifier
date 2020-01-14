@@ -26,6 +26,8 @@ def main():
     train_gen = TrainBatchGenerator(c)
     val_gen = ValBatchGenerator(c, train_gen)
 
+    train_gen[0]
+
     model_output_dir_path = '{}/{}'.format(c.model_output_dir, c.model_name)
     if os.path.isdir(model_output_dir_path) is False:
         os.makedirs(model_output_dir_path)

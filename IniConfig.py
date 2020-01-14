@@ -18,8 +18,8 @@ class IniConfig:
         self.img_size = int(parser.get('model', 'img_size'))
 
         self.train_data = parser.get('data paths', 'train_data')
-
         self.val_data = parser.get('data paths', 'val_data')
+        self.classes_filepath = parser.get('data paths', 'classes_file')
 
         self.train_steps = int(parser.get('training', 'train_steps'))
 
