@@ -150,6 +150,6 @@ class ValBatchGenerator(Sequence):
     def __next__(self):
         if self.n < len(self):
             self.n += 1
-            return self[self.n]
+            return self[self.n - 1]
         else:
             raise StopIteration()

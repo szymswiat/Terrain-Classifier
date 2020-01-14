@@ -94,6 +94,11 @@ def main():
         )
     elif c.mode == 'resume':
 
+        dependencies = {
+            'iou_score': iou_score,
+            'f1_score': f1_score
+        }
+
         # TODO select best model
         raise NotImplemented()
         # model = load_model('{}/{}_whole_model.h5'.format(model_output_dir_path, c.model_name))

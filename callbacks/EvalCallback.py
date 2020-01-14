@@ -24,10 +24,10 @@ class EvalCallback(Callback):
     def on_epoch_end(self, epoch, logs=None):
         self.log_file.write('epoch {}\n'.format(epoch))
 
-        m_print(self.log_file, 'train:\n loss - {}\n iou - {}\n f1 - {}\n\n'.format(
+        m_print(self.log_file, '\ntrain:\n loss - {}\n iou - {}\n f1 - {}\n'.format(
             logs['loss'], logs['iou_score'], logs['f1_score']
         ))
-        m_print(self.log_file, 'val:\n loss - {}\n iou - {}\n f1 - {}\n\n'.format(
+        m_print(self.log_file, 'val:\n loss - {}\n iou - {}\n f1 - {}\n'.format(
             logs['val_loss'], logs['val_iou_score'], logs['val_f1_score']
         ))
 

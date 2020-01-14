@@ -1,12 +1,12 @@
 import argparse
 import sys
 
+import matplotlib.pyplot as plt
 import numpy as np
-from imageio.plugins.pillow import ndarray_to_pil
 from tensorflow.keras.models import load_model, Model
 
 from bin.train import IniConfig
-from eval.eval_helpers import map_to_classes
+from eval.eval_helpers import map_to_classes, iou_score, f1_score
 from training.data_provider import ValBatchGenerator
 
 
@@ -23,6 +23,25 @@ def parse_args(args):
     return parser.parse_args(args)
 
 
+def postprocess_data(images_batch, predictions, gt_masks_batch):
+    b, h, w, ch = images_batch.shape
+    gt_classes_map = map_to_classes(gt_masks_batch)
+    gt_mask_to_display = np.zeros(shape=gt_classes_map.shape, dtype=np.uint8)
+    gt_mask_to_display[gt_classes_map == 1] = 255
+    gt_mask_to_display = gt_mask_to_display.reshape((b, h, w))
+
+    pred_classes_map = map_to_classes(predictions)
+    pred_mask_to_display = np.zeros(shape=pred_classes_map.shape, dtype=np.uint8)
+    pred_mask_to_display[pred_classes_map == 1] = 255
+    pred_mask_to_display = pred_mask_to_display.reshape((b, h, w))
+
+    images_batch += 1.
+    images_batch *= 127.5
+    image = images_batch[0].astype(dtype=np.uint8)
+
+    return image, pred_mask_to_display[0], gt_mask_to_display[0]
+
+
 def main(args=None):
     if args is None:
         args = sys.argv[1:]
@@ -37,28 +56,33 @@ def main(args=None):
         validation_images_size=0
     )
 
-    model: Model = load_model(args.model)
+    dependencies = {
+        'iou_score': iou_score,
+        'f1_score': f1_score
+    }
 
-    for images_batch, masks_batch in data_gen:
+    model: Model = load_model(args.model, custom_objects=dependencies)
+
+    for images_batch, gt_masks_batch in data_gen:
         predictions = model.predict_on_batch(images_batch)
-
-        b, h, w, ch = images_batch.shape
 
         predictions = predictions.numpy()
 
-        gt_classes_map = map_to_classes(masks_batch)
-        gt_mask_to_display = np.zeros(shape=gt_classes_map.shape, dtype=np.uint8)
-        gt_mask_to_display[gt_classes_map == 1] = 255
-        gt_mask_to_display = gt_mask_to_display.reshape((b, h, w))
+        image, prediction, gt = postprocess_data(images_batch, predictions, gt_masks_batch)
 
-        pred_classes_map = map_to_classes(predictions)
-        pred_mask_to_display = np.zeros(shape=pred_classes_map.shape, dtype=np.uint8)
-        pred_mask_to_display[pred_classes_map == 1] = 255
-        pred_mask_to_display = pred_mask_to_display.reshape((b, h, w))
+        fig = plt.figure(
+            dpi=200
+        )
+        gs = fig.add_gridspec(1, 3)
 
-        ndarray_to_pil(images_batch[0]).show(title='image')
-        ndarray_to_pil(pred_mask_to_display[0]).show(title='prediction')
-        ndarray_to_pil(gt_mask_to_display[0]).show(title='gt')
+        fig.add_subplot(gs[0, 0])
+        plt.imshow(image)
+        fig.add_subplot(gs[0, 1])
+        plt.imshow(prediction, cmap='gray')
+        fig.add_subplot(gs[0, 2])
+        plt.imshow(gt, cmap='gray')
+
+        plt.show()
 
 
 if __name__ == "__main__":
