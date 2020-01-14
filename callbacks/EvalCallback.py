@@ -1,6 +1,8 @@
 from tensorflow.keras.callbacks import Callback
 from tensorflow.keras.utils import Sequence
 
+from IniConfig import IniConfig
+
 
 def m_print(file, msg):
     print(msg)
@@ -10,13 +12,12 @@ def m_print(file, msg):
 
 class EvalCallback(Callback):
 
-    def __init__(self, val_gen: Sequence, size_data, model_output_path, log_filename):
+    def __init__(self, val_gen: Sequence, model_output_path, config: IniConfig):
         super(EvalCallback, self).__init__()
 
         self.val_gen = val_gen
-        self.size_data = size_data
 
-        self.log_file = open('{}/{}'.format(model_output_path, log_filename), 'w')
+        self.log_file = open('{}/{}'.format(model_output_path, config.log_filepath), 'w')
         self.model_output_path = model_output_path
 
         self.best_val_f1 = 0

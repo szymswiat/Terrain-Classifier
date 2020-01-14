@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from tensorflow.keras.models import load_model, Model
 
-from bin.train import IniConfig
+from IniConfig import IniConfig
 from eval.eval_helpers import map_to_classes, iou_score, f1_score
 from training.data_provider import ValBatchGenerator
 
@@ -49,12 +49,7 @@ def main(args=None):
 
     c = IniConfig('configuration.ini')
 
-    data_gen = ValBatchGenerator(
-        data_path='./data/val',
-        train_gen=None,
-        batch_size=1,
-        validation_images_size=0
-    )
+    data_gen = ValBatchGenerator(c)
 
     dependencies = {
         'iou_score': iou_score,
