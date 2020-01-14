@@ -6,6 +6,8 @@ from callbacks.EvalCallback import EvalCallback
 from model.model import get_unet
 from training.data_provider import TrainBatchGenerator, ValBatchGenerator
 
+debug = True
+
 
 class IniConfig:
     def __init__(self, filepath):
@@ -80,6 +82,9 @@ def main():
 
         model = get_unet(c.n_classes, c.n_ch, c.height, c.width)  # the U-net model
         print(model.summary())
+        if debug:
+            from tensorflow.keras.utils import plot_model as plot
+            plot(model, to_file='{}/{}_model.png'.format(model_output_dir_path, c.model_name))
 
         model.compile(optimizer='sgd', loss='categorical_crossentropy')
     elif c.mode == 'resume':

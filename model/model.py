@@ -2,39 +2,54 @@ from tensorflow.keras.layers import Input, concatenate, Conv2D, MaxPooling2D, Up
 from tensorflow.keras.models import Model
 
 
+def conv_block(filters, inputs):
+    conv = Conv2D(filters, (3, 3), activation='relu', padding='same')(inputs)
+    conv = Dropout(0.2)(conv)
+    conv = Conv2D(filters, (3, 3), activation='relu', padding='same')(conv)
+    return conv
+
+
+def pooling_block(filters, inputs):
+    conv = conv_block(filters, inputs)
+    pool = MaxPooling2D((2, 2))(conv)
+
+    return conv, pool
+
+
+def up_block(filters, inputs):
+    conv = conv_block(filters, inputs)
+    up = UpSampling2D(size=(2, 2))(conv)
+
+    return up
+
+
 def get_unet(n_classes, n_ch, img_height, img_width) -> Model:
     inputs = Input(shape=(img_height, img_width, n_ch))
-    conv1 = Conv2D(32, (3, 3), activation='relu', padding='same')(inputs)
-    conv1 = Dropout(0.2)(conv1)
-    conv1 = Conv2D(32, (3, 3), activation='relu', padding='same')(conv1)
-    pool1 = MaxPooling2D((2, 2))(conv1)
-    #
-    conv2 = Conv2D(64, (3, 3), activation='relu', padding='same')(pool1)
-    conv2 = Dropout(0.2)(conv2)
-    conv2 = Conv2D(64, (3, 3), activation='relu', padding='same')(conv2)
-    pool2 = MaxPooling2D((2, 2))(conv2)
-    #
-    conv3 = Conv2D(128, (3, 3), activation='relu', padding='same')(pool2)
-    conv3 = Dropout(0.2)(conv3)
-    conv3 = Conv2D(128, (3, 3), activation='relu', padding='same')(conv3)
 
-    up1 = UpSampling2D(size=(2, 2))(conv3)
-    up1 = concatenate([conv2, up1], axis=3)
-    conv4 = Conv2D(64, (3, 3), activation='relu', padding='same')(up1)
-    conv4 = Dropout(0.2)(conv4)
-    conv4 = Conv2D(64, (3, 3), activation='relu', padding='same')(conv4)
-    #
-    up2 = UpSampling2D(size=(2, 2))(conv4)
-    up2 = concatenate([conv1, up2], axis=3)
-    conv5 = Conv2D(32, (3, 3), activation='relu', padding='same')(up2)
-    conv5 = Dropout(0.2)(conv5)
-    conv5 = Conv2D(32, (3, 3), activation='relu', padding='same')(conv5)
-    #
-    conv6 = Conv2D(n_classes, (1, 1), activation='relu', padding='same')(conv5)
-    conv6 = Reshape((img_height * img_width, n_classes))(conv6)
+    level_1, pooled_level_1 = pooling_block(filters=32, inputs=inputs)
+    level_2, pooled_level_2 = pooling_block(filters=64, inputs=pooled_level_1)
+    level_3, pooled_level_3 = pooling_block(filters=128, inputs=pooled_level_2)
+    level_4, pooled_level_4 = pooling_block(filters=256, inputs=pooled_level_3)
+
+    up_level_4 = up_block(filters=512, inputs=pooled_level_4)
+    concat_level_4 = concatenate([up_level_4, level_4], axis=3)
+
+    up_level_3 = up_block(filters=256, inputs=concat_level_4)
+    concat_level_3 = concatenate([up_level_3, level_3], axis=3)
+
+    up_level_2 = up_block(filters=128, inputs=concat_level_3)
+    concat_level_2 = concatenate([up_level_2, level_2], axis=3)
+
+    up_level_1 = up_block(filters=64, inputs=concat_level_2)
+    concat_level_1 = concatenate([up_level_1, level_1], axis=3)
+
+    level_1_output = conv_block(filters=32, inputs=concat_level_1)
+
+    output = Conv2D(n_classes, (1, 1), activation='relu', padding='same')(level_1_output)
+    shaped_output = Reshape((img_height * img_width, n_classes))(output)
     # conv6 = core.Permute((2, 1))(conv6)
-    ############
-    conv7 = Activation('softmax')(conv6)
+
+    conv7 = Activation('softmax')(shaped_output)
 
     model = Model(inputs=inputs, outputs=conv7)
 
