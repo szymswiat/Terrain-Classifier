@@ -3,6 +3,7 @@ import os
 
 # ========= Load settings from Config file
 from callbacks.EvalCallback import EvalCallback
+from eval.eval_helpers import iou_score, f1_score
 from model.model import get_unet
 from training.data_provider import TrainBatchGenerator, ValBatchGenerator
 
@@ -86,7 +87,11 @@ def main():
             from tensorflow.keras.utils import plot_model as plot
             plot(model, to_file='{}/{}_model.png'.format(model_output_dir_path, c.model_name))
 
-        model.compile(optimizer='sgd', loss='categorical_crossentropy')
+        model.compile(
+            optimizer='sgd',
+            loss='categorical_crossentropy',
+            metrics=[iou_score, f1_score]
+        )
     elif c.mode == 'resume':
 
         # TODO select best model
