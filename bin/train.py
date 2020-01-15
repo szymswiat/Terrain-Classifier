@@ -6,6 +6,7 @@ from callbacks.EvalCallback import EvalCallback
 from eval.eval_helpers import iou_score, f1_score
 from model.model import get_unet
 from training.data_provider import TrainBatchGenerator, ValBatchGenerator
+from tensorflow.keras.optimizers import Adam
 
 debug = True
 
@@ -40,8 +41,10 @@ def main():
             from tensorflow.keras.utils import plot_model as plot
             plot(model, to_file='{}/{}_model.png'.format(model_output_dir_path, c.model_name))
 
+        optimizer = Adam(learning_rate=0.0001)
+
         model.compile(
-            optimizer='sgd',
+            optimizer=optimizer,
             loss='categorical_crossentropy',
             metrics=[iou_score, f1_score]
         )
