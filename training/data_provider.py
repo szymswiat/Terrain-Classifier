@@ -62,7 +62,8 @@ class TrainBatchGenerator(Sequence):
         self.classes = []
 
         with open(self.config.classes_filepath) as classes_file:
-            self.classes.append(classes_file.readline().strip())
+            for line in classes_file:
+                self.classes.append(line.strip())
         assert len(self.classes) is not 0
 
         for terrain_name in terrain_names:
@@ -110,13 +111,31 @@ class TrainBatchGenerator(Sequence):
             bg_mask = np.zeros(mask_volume.shape[0])
 
             for i in range(len(self.classes)):
-                mask_true_map = mask_volume[:, i] >= 100
+                mask_true_map = mask_volume[:, i] >= 250
                 gt_masks_batch[x, mask_true_map, i + 1] = 1.0  # class mark
                 bg_mask = np.logical_or(bg_mask, mask_true_map)
 
             gt_masks_batch[x, np.logical_not(bg_mask), 0] = 1.0  # class mark
 
             imgs_batch[x] = preprocess_pixels(terrain_slice)
+
+            if len(self.classes) > 1:
+                # assign mask intersections to background class
+                single_gt = gt_masks_batch[x]
+                union = np.zeros((single_gt.shape[0]))
+                union = np.logical_or(single_gt[:, 1], union)
+                for j in range(2, self.config.n_classes):
+                    intersection = np.logical_and(union, single_gt[:, j])
+                    union = np.logical_or(single_gt[:, j], union)
+                    single_gt[intersection, 0] = 1.0
+                    single_gt[intersection, :] = 0.0
+
+                # final test ------------------ DEBUG
+                union = np.zeros((single_gt.shape[0]))
+                union = np.logical_or(single_gt[:, 0], union)
+                for j in range(1, self.config.n_classes):
+                    assert np.logical_and(union, single_gt[:, j]).sum() == 0
+                    union = np.logical_or(single_gt[:, j], union)
 
         return imgs_batch, gt_masks_batch
 
