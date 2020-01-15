@@ -147,7 +147,12 @@ class ValBatchGenerator(Sequence):
         super(ValBatchGenerator, self).__init__()
         self.data_path = config.val_data
         self.batch_size = 1
-        h5filepath = '{}/size-{}-count-{}.h5py'.format(self.data_path, config.img_size, config.validation_images_count)
+        h5filepath = '{}/size-{}-count-{}-classes-{}.h5py'.format(
+            self.data_path,
+            config.img_size,
+            config.validation_images_count,
+            config.n_classes
+        )
 
         if not os.path.isfile(h5filepath):
             if train_gen is None:
